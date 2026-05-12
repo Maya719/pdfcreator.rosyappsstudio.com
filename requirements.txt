@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+jinja2
+xhtml2pdf
+fpdf2
+pydantic
+python-multipart
+requests
+aiofiles
+Pillow
+python-docx
+reportlab

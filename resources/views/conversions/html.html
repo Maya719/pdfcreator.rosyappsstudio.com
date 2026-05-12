@@ -1,0 +1,189 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}HTML to PDF | PDF Creator{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl w-full mx-auto space-y-10 animate-fade-in-up">
+    <!-- Header -->
+    <div class="text-center space-y-3">
+        <h1 class="text-5xl font-black tracking-tight text-neutral-900">HTML to PDF</h1>
+        <p class="text-neutral-500 font-medium text-lg">Convert web pages, raw HTML code, or local files into polished PDF documents.</p>
+    </div>
+
+    <!-- Tabs Container -->
+    <div class="bg-white rounded-[3rem] border border-neutral-100 shadow-realistic p-4 md:p-8">
+        <!-- Tab Navigation -->
+        <div class="flex flex-wrap justify-center gap-2 mb-10 bg-neutral-50 p-2 rounded-2xl">
+            <button onclick="switchTab('file')" id="tab-file" class="tab-btn active px-6 py-3 rounded-xl font-bold text-sm transition-all flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <span>Local File</span>
+            </button>
+            <button onclick="switchTab('code')" id="tab-code" class="tab-btn px-6 py-3 rounded-xl font-bold text-sm transition-all flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+                <span>Raw HTML Code</span>
+            </button>
+            <button onclick="switchTab('link')" id="tab-link" class="tab-btn px-6 py-3 rounded-xl font-bold text-sm transition-all flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                <span>Public URL</span>
+            </button>
+        </div>
+
+        <!-- Form Sections -->
+        <div class="space-y-8">
+            <!-- HTML File Section -->
+            <div id="section-file" class="tab-section">
+                <form onsubmit="handleConversion(event, '/api/convert')" class="space-y-8">
+                    <div class="relative group">
+                        <input type="file" id="file" name="file" accept=".html,.htm" required
+                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            onchange="document.getElementById('file-name').textContent = this.files[0]?.name || 'No file chosen'">
+                        <div class="border-2 border-dashed border-neutral-200 group-hover:border-brand-500/50 rounded-[2rem] p-16 text-center transition-all bg-neutral-50/50 group-hover:bg-brand-50/50">
+                            <div class="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm group-hover:scale-110 transition-transform">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                            </div>
+                            <p class="text-xl font-bold text-neutral-900 mb-2" id="file-name">Upload HTML File</p>
+                            <p class="text-neutral-500 font-medium">Click or drag and drop (.html, .htm)</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                        <div class="space-y-3">
+                            <label for="filename-file" class="text-sm font-bold text-neutral-500 ml-1">Custom Filename</label>
+                            <input type="text" id="filename-file" name="filename" placeholder="webpage.pdf"
+                                class="w-full px-6 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all text-neutral-900 font-medium">
+                        </div>
+                        <button type="submit" class="w-full py-4 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl font-bold shadow-xl shadow-brand-500/30 transition-all hover:-translate-y-1 flex items-center justify-center space-x-3">
+                            <span>Generate PDF</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- HTML Code Section -->
+            <div id="section-code" class="tab-section hidden">
+                <form onsubmit="handleConversion(event, '/api/html-to-pdf/code')" class="space-y-8">
+                    <div class="space-y-3">
+                        <label for="html_content" class="text-sm font-bold text-neutral-500 ml-1">HTML Content</label>
+                        <textarea id="html_content" name="html_content" rows="12" required
+                            placeholder="<html><body><h1>Hello World</h1></body></html>"
+                            class="w-full px-6 py-4 bg-neutral-900 border border-neutral-800 rounded-[2rem] focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-brand-400 font-mono text-sm leading-relaxed"></textarea>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                        <div class="space-y-3">
+                            <label for="filename-code" class="text-sm font-bold text-neutral-500 ml-1">Custom Filename</label>
+                            <input type="text" id="filename-code" name="filename" placeholder="snippet.pdf"
+                                class="w-full px-6 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all text-neutral-900 font-medium">
+                        </div>
+                        <button type="submit" class="w-full py-4 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl font-bold shadow-xl shadow-brand-500/30 transition-all hover:-translate-y-1 flex items-center justify-center space-x-3">
+                            <span>Convert Code Snippet</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- HTML Link Section -->
+            <div id="section-link" class="tab-section hidden">
+                <form onsubmit="handleConversion(event, '/api/html-to-pdf/link')" class="space-y-8">
+                    <div class="space-y-3">
+                        <label for="url" class="text-sm font-bold text-neutral-500 ml-1">Website URL</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
+                            </div>
+                            <input type="url" id="url" name="url" required placeholder="https://google.com"
+                                class="w-full pl-14 pr-6 py-5 bg-neutral-50 border border-neutral-200 rounded-[1.5rem] focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all text-neutral-900 font-semibold">
+                        </div>
+                        <p class="text-xs text-neutral-400 ml-2 font-medium italic">* URL must be publicly accessible</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                        <div class="space-y-3">
+                            <label for="filename-link" class="text-sm font-bold text-neutral-500 ml-1">Custom Filename</label>
+                            <input type="text" id="filename-link" name="filename" placeholder="webpage.pdf"
+                                class="w-full px-6 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all text-neutral-900 font-medium">
+                        </div>
+                        <button type="submit" class="w-full py-4 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl font-bold shadow-xl shadow-brand-500/30 transition-all hover:-translate-y-1 flex items-center justify-center space-x-3">
+                            <span>Capture Website</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Global UI Elements -->
+        <div id="loader" class="hidden mt-12 text-center animate-pulse">
+            <div class="inline-flex items-center space-x-4 bg-brand-50 px-8 py-4 rounded-full border border-brand-100">
+                <div class="w-5 h-5 border-3 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+                <span class="text-brand-700 font-bold text-sm tracking-widest uppercase">Converting...</span>
+            </div>
+        </div>
+
+        <div id="result-section" class="hidden mt-12 animate-fade-in-up">
+            <div class="bg-emerald-50 border border-emerald-100 p-8 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
+                <div class="flex items-center space-x-6 text-center md:text-left">
+                    <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-black text-neutral-900 leading-tight">Success!</h4>
+                        <p class="text-neutral-500 font-medium mt-1">Your PDF document is ready.</p>
+                    </div>
+                </div>
+                <a id="result-url" href="#" target="_blank" class="px-10 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-95">
+                    Download File
+                </a>
+            </div>
+        </div>
+
+        <div id="error-section" class="hidden mt-12 animate-fade-in-up">
+            <div class="bg-red-50 border border-red-100 p-8 rounded-[2rem] flex items-center space-x-6 shadow-sm">
+                <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                </div>
+                <div>
+                    <h4 class="text-xl font-black text-neutral-900 leading-tight">Error</h4>
+                    <p id="error-message" class="text-neutral-500 font-medium mt-1">Failed to process request.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .tab-btn.active {
+        background: #ffffff;
+        color: #0c87eb;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        border: 1px solid #f0f0f0;
+    }
+    .tab-btn:not(.active) {
+        color: #737373;
+    }
+    .tab-btn:not(.active):hover {
+        color: #171717;
+        background: #f0f0f0;
+    }
+</style>
+
+<script>
+    function switchTab(tabId) {
+        // Hide all sections
+        document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
+        // Deactivate all buttons
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
+        // Show target section
+        document.getElementById('section-' + tabId).classList.remove('hidden');
+        // Activate target button
+        document.getElementById('tab-' + tabId).classList.add('active');
+        
+        // Reset Global UI
+        document.getElementById('result-section').classList.add('hidden');
+        document.getElementById('error-section').classList.add('hidden');
+        document.getElementById('loader').classList.add('hidden');
+    }
+</script>
+{% endblock %}
