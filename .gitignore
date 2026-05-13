@@ -32,3 +32,4 @@ archive.zip
 .codspeed
 storage/public/converted/*
 storage/private/uploads/*
+test-docs

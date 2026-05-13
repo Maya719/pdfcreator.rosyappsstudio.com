@@ -36,5 +36,9 @@ class HomeController:
         return templates.TemplateResponse(request=request, name="conversions/html.html", context={"api_key": os.getenv("API_KEY")})
 
     @staticmethod
+    async def pdf_to_word(request: Request):
+        return templates.TemplateResponse(request=request, name="conversions/pdf_to_word.html", context={"api_key": os.getenv("API_KEY")})
+
+    @staticmethod
     async def api_docs(request: Request):
         return templates.TemplateResponse(request=request, name="api-docs.html", context={"api_key": os.getenv("API_KEY")})

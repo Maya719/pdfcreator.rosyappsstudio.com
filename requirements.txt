@@ -10,4 +10,5 @@ requests
 aiofiles
 Pillow
 python-docx
+pdf2docx
 reportlab

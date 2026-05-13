@@ -9,6 +9,7 @@ from typing import List, Optional, Union
 from fastapi import HTTPException, UploadFile
 from PIL import Image
 from xhtml2pdf import pisa
+from pdf2docx import Converter
 from config.paths import PRIVATE_DISK, PUBLIC_DISK
 from config.app import APP_URL
 
@@ -40,11 +41,11 @@ class UniversalConverterController:
         if ext in (".html", ".htm"):
             return await UniversalConverterController._handle_html(file, filename)
             
-        # Office Documents to target_format (usually PDF)
+        # Office Documents and PDFs to target_format
         office_extensions = (
             ".docx", ".doc", ".rtf", ".odt", ".txt",
             ".xlsx", ".xls", ".ods", ".csv",
-            ".pptx", ".ppt", ".odp"
+            ".pptx", ".ppt", ".odp", ".pdf"
         )
         
         if ext in office_extensions:
@@ -170,12 +171,50 @@ class UniversalConverterController:
             await file.close()
 
     @staticmethod
+    async def _handle_pdf_to_word(file: UploadFile, target_format: str, filename: str = None):
+        temp_upload_dir = PRIVATE_DISK / "uploads"
+        temp_upload_dir.mkdir(parents=True, exist_ok=True)
+        temp_input_path = temp_upload_dir / f"{uuid.uuid4().hex}_{file.filename}"
+        
+        outdir = PUBLIC_DISK / "converted"
+        outdir.mkdir(parents=True, exist_ok=True)
+        output_path = outdir / filename
+
+        try:
+            await file.seek(0)
+            content = await file.read()
+            with open(temp_input_path, "wb") as buffer:
+                buffer.write(content)
+
+            # pdf2docx conversion
+            cv = Converter(str(temp_input_path))
+            cv.convert(str(output_path), start=0, end=None)
+            cv.close()
+
+            return {
+                "status": "success",
+                "file_url": f"{APP_URL}/storage/converted/{filename}"
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"PDF to Word conversion failed: {str(e)}")
+        finally:
+            if os.path.exists(temp_input_path):
+                os.remove(temp_input_path)
+            await file.close()
+
+    @staticmethod
     async def _handle_office_doc(file: UploadFile, target_format: str, filename: str = None):
         if not filename:
             filename = f"doc_{int(time.time())}_{uuid.uuid4().hex[:8]}.{target_format}"
 
         if not filename.endswith(f".{target_format}"):
             filename += f".{target_format}"
+
+        ext = os.path.splitext(file.filename)[1].lower()
+        
+        # Special case: PDF to Word using pdf2docx
+        if ext == ".pdf" and target_format.lower() in ("docx", "doc"):
+            return await UniversalConverterController._handle_pdf_to_word(file, target_format, filename)
 
         temp_upload_dir = PRIVATE_DISK / "uploads"
         temp_upload_dir.mkdir(parents=True, exist_ok=True)

@@ -18,6 +18,6 @@ from config.paths import PRIVATE_DISK, PUBLIC_DISK
 # Ensure compulsory directories exist
 # We use str() to ensure compatibility and exist_ok=True to avoid errors if they already exist
 os.makedirs(os.path.join(str(PRIVATE_DISK), "uploads"), exist_ok=True)
-os.makedirs(os.path.join(str(PUBLIC_DISK), "pdfs"), exist_ok=True)
+os.makedirs(os.path.join(str(PUBLIC_DISK), "converted"), exist_ok=True)
 
 print(f"Bootstrapping complete. Storage paths verified.")

@@ -27,6 +27,10 @@ async def jpg_to_pdf(request: Request):
 async def html_to_pdf(request: Request):
     return await HomeController.html_to_pdf(request)
 
+@router.get("/pdf-to-word")
+async def pdf_to_word(request: Request):
+    return await HomeController.pdf_to_word(request)
+
 @router.get("/api-docs")
 async def api_docs(request: Request):
     return await HomeController.api_docs(request)
