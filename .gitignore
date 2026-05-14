@@ -33,3 +33,4 @@ archive.zip
 storage/public/converted/*
 storage/private/uploads/*
 test-docs
+.env
