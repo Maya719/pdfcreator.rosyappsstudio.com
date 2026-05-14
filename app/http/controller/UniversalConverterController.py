@@ -17,11 +17,25 @@ from config.app import APP_URL
 class UniversalConverterController:
 
     @staticmethod
+    def _get_safe_filename(filename: str) -> str:
+        if not filename:
+            return None
+        # Use os.path.basename to prevent directory traversal and replace spaces
+        return os.path.basename(filename).replace(" ", "_")
+
+    @staticmethod
     async def convert(
         file: Union[UploadFile, List[UploadFile]], 
         target_format: str = "pdf", 
         filename: Optional[str] = None
     ):
+        # Sanitize filename if provided
+        if filename:
+            filename = UniversalConverterController._get_safe_filename(filename)
+
+        # Normalize target_format (remove leading dot if present)
+        target_format = target_format.lower().lstrip('.')
+
         # If it's a list with only one file, treat it as a single file for better routing
         if isinstance(file, list) and len(file) == 1:
             file = file[0]
@@ -77,10 +91,13 @@ class UniversalConverterController:
             elif img.mode != "RGB":
                 img = img.convert("RGB")
             
-            output_path = PUBLIC_DISK / "converted"
-            output_path.mkdir(parents=True, exist_ok=True)
-            img.save(output_path / filename, target_format.upper() if target_format.lower() != "pdf" else "PDF")
+            output_dir = PUBLIC_DISK / "converted"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_path = output_dir / filename
+            img.save(output_path, target_format.upper() if target_format.lower() != "pdf" else "PDF")
 
+            if not output_path.exists():
+                raise Exception("Output file was not saved successfully")
 
             return {
                 "status": "success",
@@ -128,6 +145,9 @@ class UniversalConverterController:
                 append_images=images[1:]
             )
 
+            if not output_path.exists():
+                raise Exception("Combined PDF was not saved successfully")
+
             return {
                 "status": "success",
                 "file_url": f"{APP_URL}/storage/converted/{filename}",
@@ -159,7 +179,10 @@ class UniversalConverterController:
                 pisa_status = pisa.CreatePDF(html_content, dest=f)
 
             if pisa_status.err:
-                raise Exception("xhtml2pdf conversion error")
+                raise Exception(f"xhtml2pdf conversion error code: {pisa_status.err}")
+
+            if not output_path.exists() or output_path.stat().st_size == 0:
+                raise Exception("PDF file was not created or is empty")
 
             return {
                 "status": "success",
@@ -174,7 +197,10 @@ class UniversalConverterController:
     async def _handle_pdf_to_word(file: UploadFile, target_format: str, filename: str = None):
         temp_upload_dir = PRIVATE_DISK / "uploads"
         temp_upload_dir.mkdir(parents=True, exist_ok=True)
-        temp_input_path = temp_upload_dir / f"{uuid.uuid4().hex}_{file.filename}"
+        
+        # Use UUID for temp file to avoid issues with special characters in original filename
+        ext = os.path.splitext(file.filename)[1].lower()
+        temp_input_path = temp_upload_dir / f"{uuid.uuid4().hex}{ext}"
         
         outdir = PUBLIC_DISK / "converted"
         outdir.mkdir(parents=True, exist_ok=True)
@@ -190,6 +216,9 @@ class UniversalConverterController:
             cv = Converter(str(temp_input_path))
             cv.convert(str(output_path), start=0, end=None)
             cv.close()
+
+            if not output_path.exists():
+                raise Exception("Word file was not created by the converter")
 
             return {
                 "status": "success",
@@ -218,7 +247,9 @@ class UniversalConverterController:
 
         temp_upload_dir = PRIVATE_DISK / "uploads"
         temp_upload_dir.mkdir(parents=True, exist_ok=True)
-        temp_input_path = temp_upload_dir / f"{uuid.uuid4().hex}_{file.filename}"
+        
+        # Use UUID for temp file to avoid issues with special characters in original filename
+        temp_input_path = temp_upload_dir / f"{uuid.uuid4().hex}{ext}"
 
         try:
             await file.seek(0)
@@ -246,20 +277,26 @@ class UniversalConverterController:
             ], capture_output=True, text=True, timeout=120)
 
             if result.returncode != 0:
-                raise Exception(result.stderr)
+                raise Exception(f"LibreOffice error (Exit Code {result.returncode}): {result.stderr or result.stdout}")
 
             generated_name = os.path.splitext(os.path.basename(temp_input_path))[0] + f".{target_format}"
             generated_path = outdir / generated_name
             final_path = outdir / filename
 
-            if generated_path.exists():
-                if final_path.exists():
-                    os.remove(final_path)
-                os.rename(generated_path, final_path)
+            if not generated_path.exists():
+                raise Exception(f"LibreOffice finished but output file was not found. CLI Output: {result.stdout}")
+
+            if final_path.exists():
+                os.remove(final_path)
+            
+            os.rename(generated_path, final_path)
+
+            if not final_path.exists():
+                raise Exception("Failed to move the converted file to the final destination")
 
             return {
                 "status": "success",
-                "file_url": f"{APP_URL}/storage/converted/{final_path.name}"
+                "file_url": f"{APP_URL}/storage/converted/{filename}"
             }
 
         except Exception as e:
@@ -272,6 +309,10 @@ class UniversalConverterController:
 
     @staticmethod
     async def convert_html_code(html_code: str, filename: str = None):
+        # Sanitize filename if provided
+        if filename:
+            filename = UniversalConverterController._get_safe_filename(filename)
+
         if not filename:
             filename = f"html_code_{int(time.time())}_{uuid.uuid4().hex[:8]}.pdf"
 
@@ -287,7 +328,10 @@ class UniversalConverterController:
                 pisa_status = pisa.CreatePDF(html_code, dest=f)
 
             if pisa_status.err:
-                raise Exception("xhtml2pdf conversion error")
+                raise Exception(f"xhtml2pdf conversion error code: {pisa_status.err}")
+
+            if not output_path.exists() or output_path.stat().st_size == 0:
+                raise Exception("PDF file was not created or is empty")
 
             return {
                 "status": "success",
@@ -298,6 +342,10 @@ class UniversalConverterController:
 
     @staticmethod
     async def convert_html_link(url: str, filename: str = None):
+        # Sanitize filename if provided
+        if filename:
+            filename = UniversalConverterController._get_safe_filename(filename)
+
         if not filename:
             filename = f"html_link_{int(time.time())}_{uuid.uuid4().hex[:8]}.pdf"
 
@@ -317,7 +365,10 @@ class UniversalConverterController:
                 pisa_status = pisa.CreatePDF(html_content, dest=f)
 
             if pisa_status.err:
-                raise Exception("xhtml2pdf conversion error")
+                raise Exception(f"xhtml2pdf conversion error code: {pisa_status.err}")
+
+            if not output_path.exists() or output_path.stat().st_size == 0:
+                raise Exception("PDF file was not created or is empty")
 
             return {
                 "status": "success",
