@@ -6,17 +6,64 @@ import subprocess
 import requests
 import docx
 import zipfile
+import asyncio
+import tempfile
+import pathlib
+try:
+    import fitz # PyMuPDF
+except ImportError:
+    fitz = None
 from io import BytesIO
 from typing import List, Optional, Union
 from fastapi import HTTPException, UploadFile
+# pyrefly: ignore [missing-import]
 from PIL import Image
+# pyrefly: ignore [missing-import]
 from xhtml2pdf import pisa
 from pdf2docx import Converter
 from config.paths import PRIVATE_DISK, PUBLIC_DISK
 from config.app import APP_URL
 
 
+
 class UniversalConverterController:
+
+    @staticmethod
+    def _validate_file_not_protected(file_path: str, ext: str):
+        """
+        Definitively checks if a file is password protected without guessing.
+        """
+        # OOXML formats (.docx, .xlsx, .pptx) are ZIP files. 
+        # If they are encrypted, they are OLE2 containers and NOT ZIP files.
+        if ext in (".docx", ".xlsx", ".pptx", ".ods", ".odt"):
+            if not zipfile.is_zipfile(file_path):
+                # Check for OLE2 header (common for encrypted office docs)
+                with open(file_path, "rb") as f:
+                    header = f.read(8)
+                    if header == b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1":
+                        raise Exception("The file is password-protected and cannot be converted.")
+            else:
+                # Even if it's a zip, check if any entry is encrypted
+                try:
+                    with zipfile.ZipFile(file_path) as zf:
+                        for info in zf.infolist():
+                            if info.flag_bits & 0x1:
+                                raise Exception("The file contains encrypted content and cannot be converted.")
+                except Exception:
+                    # If it's a ZIP but we can't read it, it might be corrupted or protected
+                    pass
+
+        # PDF check using fitz
+        if ext == ".pdf" and fitz:
+            try:
+                doc = fitz.open(file_path)
+                is_encrypted = doc.is_encrypted
+                doc.close()
+                if is_encrypted:
+                    raise Exception("The PDF file is password-protected and cannot be converted.")
+            except Exception as e:
+                if "password" in str(e).lower():
+                    raise Exception("The PDF file is password-protected and cannot be converted.")
 
     @staticmethod
     def _get_safe_filename(filename: str) -> str:
@@ -209,8 +256,12 @@ class UniversalConverterController:
             content = await file.read()
             html_content = content.decode("utf-8")
 
-            with open(output_path, "wb") as f:
-                pisa_status = pisa.CreatePDF(html_content, dest=f)
+            def generate_pdf():
+                with open(output_path, "wb") as f:
+                    pisa_status = pisa.CreatePDF(html_content, dest=f)
+                return pisa_status
+
+            pisa_status = await asyncio.to_thread(generate_pdf)
 
             if pisa_status.err:
                 raise Exception(f"xhtml2pdf conversion error code: {pisa_status.err}")
@@ -251,9 +302,12 @@ class UniversalConverterController:
                 buffer.write(content)
 
             # pdf2docx conversion
-            cv = Converter(str(temp_input_path))
-            cv.convert(str(output_path), start=0, end=None)
-            cv.close()
+            def perform_conversion():
+                cv = Converter(str(temp_input_path))
+                cv.convert(str(output_path), start=0, end=None)
+                cv.close()
+
+            await asyncio.to_thread(perform_conversion)
 
             if not output_path.exists():
                 raise Exception("Word file was not created by the converter")
@@ -295,109 +349,94 @@ class UniversalConverterController:
         # Use UUID for temp file to avoid issues with special characters in original filename
         temp_input_path = temp_upload_dir / f"{uuid.uuid4().hex}{ext}"
 
+        # Setup a temp directory for LibreOffice UserInstallation
+        temp_profile_dir = tempfile.mkdtemp(prefix="soffice_profile_")
+        profile_uri = pathlib.Path(temp_profile_dir).as_uri()
+
         try:
             await file.seek(0)
             content = await file.read()
             with open(temp_input_path, "wb") as buffer:
                 buffer.write(content)
 
-            # Pre-check for password protection if it's a docx
-            if ext == ".docx" and docx:
-                try:
-                    docx.Document(temp_input_path)
-                except Exception as e:
-                    err_msg = str(e).lower()
-                    if (
-                        "password" in err_msg
-                        or "encrypted" in err_msg
-                        or "file is not a word file" in err_msg
-                    ):
-                        raise Exception(
-                            "The DOCX file is password-protected or encrypted and cannot be converted."
-                        )
+            # Definitive check for password protection
+            UniversalConverterController._validate_file_not_protected(str(temp_input_path), ext)
 
             outdir = PUBLIC_DISK / "converted"
             outdir.mkdir(parents=True, exist_ok=True)
 
             soffice_path = os.getenv("LIBREOFFICE_PATH", "soffice")
 
-            result = subprocess.run(
-                [
-                    soffice_path,
-                    "--headless",
-                    "--nologo",
-                    "--nodefault",
-                    "--nofirststartwizard",
-                    "--nolockcheck",
-                    "--convert-to",
-                    target_format,
-                    "--outdir",
-                    str(outdir),
-                    str(temp_input_path),
-                ],
-                capture_output=True,
-                text=True,
-                timeout=120,
-            )
+            soffice_args = [
+                soffice_path,
+                f"-env:UserInstallation={profile_uri}",
+                "--headless",
+                "--nologo",
+                "--nodefault",
+                "--nofirststartwizard",
+                "--nolockcheck",
+                "--convert-to",
+                target_format,
+                "--outdir",
+                str(outdir),
+                str(temp_input_path),
+            ]
+
+            def run_soffice():
+                return subprocess.run(
+                    soffice_args,
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                )
+
+            result = await asyncio.to_thread(run_soffice)
 
             # Check for specific error patterns in stdout or stderr
             combined_output = (result.stdout or "") + (result.stderr or "")
 
-            if (
-                "password" in combined_output.lower()
-                or "encrypted" in combined_output.lower()
-            ):
-                raise Exception(
-                    "The file is password-protected or encrypted and cannot be converted."
-                )
-
-            if "corrupt" in combined_output.lower():
-                raise Exception(
-                    "The file appears to be corrupt or in an unrecognized format."
-                )
-
             if result.returncode != 0:
-                raise Exception(
-                    f"LibreOffice error (Exit Code {result.returncode}): {combined_output}"
-                )
+                raise Exception(f"LibreOffice error (Exit Code {result.returncode}): {combined_output}")
 
-            generated_name = (
-                os.path.splitext(os.path.basename(temp_input_path))[0]
-                + f".{target_format}"
-            )
+            generated_name = os.path.splitext(os.path.basename(temp_input_path))[0] + f".{target_format}"
             generated_path = outdir / generated_name
             final_path = outdir / filename
 
             if not generated_path.exists():
-                error_detail = (
-                    combined_output.strip()
-                    or "No output from LibreOffice. This usually happens with password-protected or invalid files."
-                )
-                raise Exception(
-                    f"LibreOffice finished but output file was not found. Details: {error_detail}"
-                )
+                raise Exception(f"Conversion failed. LibreOffice output: {combined_output.strip() or 'No output from converter'}")
 
             if final_path.exists():
                 os.remove(final_path)
-
+            
             os.rename(generated_path, final_path)
 
             if not final_path.exists():
-                raise Exception(
-                    "Failed to move the converted file to the final destination"
-                )
+                raise Exception("Failed to move the converted file to the final destination")
 
             return {
                 "status": "success",
                 "file_url": f"{APP_URL}/storage/converted/{filename}",
             }
 
+        except subprocess.TimeoutExpired as e:
+            stdout_str = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
+            stderr_str = e.stderr.decode() if isinstance(e.stderr, bytes) else (e.stderr or "")
+            raise HTTPException(
+                status_code=500,
+                detail=f"LibreOffice conversion timed out. STDOUT: {stdout_str.strip()} | STDERR: {stderr_str.strip()}"
+            )
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
         finally:
             if os.path.exists(temp_input_path):
                 os.remove(temp_input_path)
+            # Clean up the temp profile directory
+            if os.path.exists(temp_profile_dir):
+                try:
+                    shutil.rmtree(temp_profile_dir)
+                except Exception:
+                    pass
             await file.close()
 
     @staticmethod
@@ -417,8 +456,12 @@ class UniversalConverterController:
         output_path = output_dir / filename
 
         try:
-            with open(output_path, "wb") as f:
-                pisa_status = pisa.CreatePDF(html_code, dest=f)
+            def generate_pdf():
+                with open(output_path, "wb") as f:
+                    pisa_status = pisa.CreatePDF(html_code, dest=f)
+                return pisa_status
+
+            pisa_status = await asyncio.to_thread(generate_pdf)
 
             if pisa_status.err:
                 raise Exception(f"xhtml2pdf conversion error code: {pisa_status.err}")
@@ -452,12 +495,15 @@ class UniversalConverterController:
         output_path = output_dir / filename
 
         try:
-            response = requests.get(url, timeout=15)
-            response.raise_for_status()
-            html_content = response.text
+            def fetch_and_generate():
+                response = requests.get(url, timeout=15)
+                response.raise_for_status()
+                html_content = response.text
+                with open(output_path, "wb") as f:
+                    pisa_status = pisa.CreatePDF(html_content, dest=f)
+                return pisa_status
 
-            with open(output_path, "wb") as f:
-                pisa_status = pisa.CreatePDF(html_content, dest=f)
+            pisa_status = await asyncio.to_thread(fetch_and_generate)
 
             if pisa_status.err:
                 raise Exception(f"xhtml2pdf conversion error code: {pisa_status.err}")

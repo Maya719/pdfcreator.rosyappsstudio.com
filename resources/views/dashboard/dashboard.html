@@ -1,0 +1,191 @@
+{% extends "layouts/app.html" %}
+{% set is_admin = True %}
+{% set hide_default_layout = True %}
+
+{% block title %}Dashboard | PDF Creator Admin{% endblock %}
+
+{% block content %}
+<!-- Welcome Section -->
+<div class="mb-8">
+  <h1 class="text-2xl md:text-3xl text-gray-800 font-extrabold tracking-tight mb-2">Good morning, {{ user.username if user else 'Admin' }}! 👋</h1>
+  <p class="text-gray-500 font-medium">Here's what's happening with your PDF conversions today.</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+  
+  <!-- Stat Card: Total Conversions -->
+  <div class="flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow duration-300">
+    <div class="flex items-center justify-between mb-4">
+      <div class="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+      </div>
+      <span class="flex items-center text-xs font-bold text-green-500 bg-green-50 px-2 py-1 rounded-full">
+        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+        12%
+      </span>
+    </div>
+    <div class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Conversions</div>
+    <div class="text-3xl font-extrabold text-gray-800">2,456</div>
+  </div>
+
+  <!-- Stat Card: Success Rate -->
+  <div class="flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow duration-300">
+    <div class="flex items-center justify-between mb-4">
+      <div class="p-2.5 bg-green-50 text-green-600 rounded-lg">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+      </div>
+      <span class="flex items-center text-xs font-bold text-green-500 bg-green-50 px-2 py-1 rounded-full">
+        Optimal
+      </span>
+    </div>
+    <div class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Success Rate</div>
+    <div class="text-3xl font-extrabold text-gray-800">99.2%</div>
+  </div>
+
+  <!-- Stat Card: Active Users -->
+  <div class="flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow duration-300">
+    <div class="flex items-center justify-between mb-4">
+      <div class="p-2.5 bg-purple-50 text-purple-600 rounded-lg">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292V15.5a4 4 0 11-4-4H8a4 4 0 11-4-4V4.354z"></path>
+        </svg>
+      </div>
+      <span class="flex items-center text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded-full">
+        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+        3%
+      </span>
+    </div>
+    <div class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Active Users</div>
+    <div class="text-3xl font-extrabold text-gray-800">482</div>
+  </div>
+
+  <!-- Stat Card: Revenue -->
+  <div class="flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow duration-300">
+    <div class="flex items-center justify-between mb-4">
+      <div class="p-2.5 bg-yellow-50 text-yellow-600 rounded-lg">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <span class="flex items-center text-xs font-bold text-green-500 bg-green-50 px-2 py-1 rounded-full">
+        +24%
+      </span>
+    </div>
+    <div class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Monthly Revenue</div>
+    <div class="text-3xl font-extrabold text-gray-800">$12,840</div>
+  </div>
+
+</div>
+
+<!-- Recent Activity & Chart Placeholder -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  
+  <!-- Activity Table -->
+  <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-50 flex justify-between items-center">
+      <h3 class="text-lg font-bold text-gray-800">Recent Conversions</h3>
+      <a href="#" class="text-sm font-bold text-primary-600 hover:text-primary-700 transition-colors">View All</a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left">
+        <thead class="bg-gray-50 text-xs font-bold text-gray-400 uppercase tracking-wider">
+          <tr>
+            <th class="px-6 py-3">File Name</th>
+            <th class="px-6 py-3">Format</th>
+            <th class="px-6 py-3">Status</th>
+            <th class="px-6 py-3 text-right">Date</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4">
+              <div class="flex items-center">
+                <div class="w-8 h-8 rounded bg-red-100 text-red-600 flex items-center justify-center mr-3 font-bold text-xs">PDF</div>
+                <span class="text-sm font-bold text-gray-700">Project_Brief_v2.pdf</span>
+              </div>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500 font-medium">Word</td>
+            <td class="px-6 py-4">
+              <span class="px-2.5 py-1 text-xs font-bold text-green-600 bg-green-50 rounded-full">Completed</span>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500 text-right font-medium">2 mins ago</td>
+          </tr>
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4">
+              <div class="flex items-center">
+                <div class="w-8 h-8 rounded bg-blue-100 text-blue-600 flex items-center justify-center mr-3 font-bold text-xs">IMG</div>
+                <span class="text-sm font-bold text-gray-700">Invoice_Scan_042.jpg</span>
+              </div>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500 font-medium">PDF</td>
+            <td class="px-6 py-4">
+              <span class="px-2.5 py-1 text-xs font-bold text-yellow-600 bg-yellow-50 rounded-full">Processing</span>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500 text-right font-medium">15 mins ago</td>
+          </tr>
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4">
+              <div class="flex items-center">
+                <div class="w-8 h-8 rounded bg-green-100 text-green-600 flex items-center justify-center mr-3 font-bold text-xs">XLS</div>
+                <span class="text-sm font-bold text-gray-700">Quarterly_Report.xlsx</span>
+              </div>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500 font-medium">PDF</td>
+            <td class="px-6 py-4">
+              <span class="px-2.5 py-1 text-xs font-bold text-green-600 bg-green-50 rounded-full">Completed</span>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500 text-right font-medium">1 hour ago</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Quick Actions Card -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col h-full">
+    <h3 class="text-lg font-bold text-gray-800 mb-6">Quick Actions</h3>
+    <div class="space-y-3 flex-grow">
+      <button class="w-full flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:border-primary-300 hover:bg-primary-50 transition-all group">
+        <div class="flex items-center">
+          <div class="p-2 bg-gray-50 text-gray-500 rounded group-hover:bg-primary-100 group-hover:text-primary-600 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          </div>
+          <span class="ml-3 text-sm font-bold text-gray-600 group-hover:text-primary-700">New Conversion</span>
+        </div>
+        <svg class="w-4 h-4 text-gray-300 group-hover:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+      </button>
+      <button class="w-full flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:border-primary-300 hover:bg-primary-50 transition-all group">
+        <div class="flex items-center">
+          <div class="p-2 bg-gray-50 text-gray-500 rounded group-hover:bg-primary-100 group-hover:text-primary-600 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+          </div>
+          <span class="ml-3 text-sm font-bold text-gray-600 group-hover:text-primary-700">Batch Upload</span>
+        </div>
+        <svg class="w-4 h-4 text-gray-300 group-hover:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+      </button>
+      <button class="w-full flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:border-primary-300 hover:bg-primary-50 transition-all group">
+        <div class="flex items-center">
+          <div class="p-2 bg-gray-50 text-gray-500 rounded group-hover:bg-primary-100 group-hover:text-primary-600 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          </div>
+          <span class="ml-3 text-sm font-bold text-gray-600 group-hover:text-primary-700">Analytics Report</span>
+        </div>
+        <svg class="w-4 h-4 text-gray-300 group-hover:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+      </button>
+    </div>
+    <div class="mt-6">
+      <div class="p-4 bg-primary-600 rounded-xl text-white shadow-lg shadow-primary-200">
+        <h4 class="text-sm font-bold mb-1">Go Premium!</h4>
+        <p class="text-xs text-primary-100 mb-3 opacity-80">Unlock unlimited batch processing and custom watermarks.</p>
+        <button class="w-full py-2 bg-white text-primary-600 text-xs font-bold rounded-lg hover:bg-primary-50 transition-colors">Upgrade Now</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

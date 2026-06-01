@@ -1,9 +1,7 @@
 from fastapi import Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from helix.templates import templates
 import os
-
-templates = Jinja2Templates(directory="resources/views")
 
 
 class HomeController:
