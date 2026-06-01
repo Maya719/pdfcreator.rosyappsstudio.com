@@ -2,8 +2,10 @@ fastapi
 uvicorn[standard]
 python-dotenv
 jinja2
-xhtml2pdf
+playwright
 fpdf2
+docx2pdf
+pywin32
 pydantic
 python-multipart
 requests
