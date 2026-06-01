@@ -4,8 +4,6 @@ python-dotenv
 jinja2
 playwright
 fpdf2
-docx2pdf
-pywin32
 pydantic
 python-multipart
 requests
@@ -20,3 +18,6 @@ xlrd
 python-pptx
 odfpy
 striprtf
+# PyMuPDF (fitz) provides native high-fidelity DOCX/XLSX/PPTX conversion since 2024+
+pymupdf
+# On Windows, the WindowsProactorEventLoopPolicy is handled in bootstrap/autoload.py

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>DOCX Renderer</title>
+    <!-- Use reliable 2026 CDNs for the conversion engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://unpkg.com/docx-preview/dist/docx-preview.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: white;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #container {
+            width: 100%;
+            height: auto;
+        }
+
+        /* docx-preview styling to ensure no scrollbars and clean background */
+        .docx-wrapper {
+            padding: 0 !important;
+            background-color: white !important;
+        }
+
+        .docx {
+            box-shadow: none !important;
+            margin-bottom: 0 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container"></div>
+    <script>
+        async function renderDocx(base64Data) {
+            try {
+                const binaryString = window.atob(base64Data);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+
+                const container = document.getElementById("container");
+                await docx.renderAsync(bytes.buffer, container, null, {
+                    className: "docx",
+                    inWrapper: true,
+                    ignoreWidth: false,
+                    ignoreHeight: false,
+                    ignoreFonts: false,
+                    breakPages: true,
+                    experimental: true,
+                    useBase64URL: true,
+                    useHeaders: true,
+                    useFooters: true,
+                    debug: false
+                });
+
+                // Signal completion to Playwright
+                window.RENDER_COMPLETE = true;
+            } catch (err) {
+                console.error("Rendering failed:", err);
+                window.RENDER_ERROR = err.message;
+            }
+        }
+    </script>
+</body>
+
+</html>

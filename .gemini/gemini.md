@@ -14,7 +14,10 @@
 - `bootstrap/app.py`: Centralized application factory (`create_app`) for FastAPI, handling all middleware, routes, and mounting.
 - `public/app.py`: Clean entry point using the application factory.
 - `WordToPdfController`: Uses a pure-Python pipeline (**Mammoth** + **xhtml2pdf**) to convert `.docx` to PDF while preserving basic styling (bold, italics, tables) without any external server software or watermarks.
-- **Pure-Python Conversion Pipeline (LibreOffice removed)**: LibreOffice has been completely removed from the server. All document conversions now use pure-Python libraries: `mammoth` (docx→HTML→PDF), `openpyxl` (xlsx), `xlrd` (xls), `python-pptx` (pptx), `odfpy` (odt/ods), `striprtf` (rtf), `reportlab` + `xhtml2pdf` for PDF rendering. `.doc`, `.ppt`, `.odp` return a friendly `400` error asking users to convert to `.docx`/`.pptx`.
+- **Modular Conversion Architecture**: The conversion logic is separated into specialized modules under `app/http/controller/converters/`. High-fidelity rendering logic and shared utilities are housed in `app/helpers/pdf_utils.py`.
+- **Browser-Engine Conversion (Pin Point Exact)**: DOCX conversion now uses a **Headless Browser (Playwright/Chromium)** combined with the **`docx-preview.js`** engine. This provides the highest possible fidelity on Linux (no LibreOffice needed) by rendering the document in a virtual browser before capturing it as a PDF.
+- **Pure-Python Pipeline**: The application remains standalone and pip-installable, using `playwright` for both HTML and DOCX rendering. LibreOffice remains removed.
+- **Cross-Platform High Fidelity**: The browser-based approach ensures that images, fonts, and complex Word layouts are preserved identically across all environments.
 
 ## Project Notes
 - **Filenames**: Automatically generated if not provided in the request.
