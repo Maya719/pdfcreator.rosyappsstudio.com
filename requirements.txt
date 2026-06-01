@@ -12,3 +12,9 @@ Pillow
 python-docx
 pdf2docx
 reportlab
+mammoth
+openpyxl
+xlrd
+python-pptx
+odfpy
+striprtf

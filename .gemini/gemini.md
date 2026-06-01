@@ -14,7 +14,7 @@
 - `bootstrap/app.py`: Centralized application factory (`create_app`) for FastAPI, handling all middleware, routes, and mounting.
 - `public/app.py`: Clean entry point using the application factory.
 - `WordToPdfController`: Uses a pure-Python pipeline (**Mammoth** + **xhtml2pdf**) to convert `.docx` to PDF while preserving basic styling (bold, italics, tables) without any external server software or watermarks.
-- **LibreOffice & Async Event Loop Hang Fix**: Configured LibreOffice to run with an isolated user profile per request using `-env:UserInstallation=file:///...` to prevent locks and document recovery hangs. Also wrapped all synchronous, blocking converter operations (LibreOffice, `pdf2docx`, `xhtml2pdf`, `requests`) in `asyncio.to_thread` calls to prevent freezing the FastAPI event loop, reduced the subprocess timeout from 120 seconds to 60 seconds, and added explicit `TimeoutExpired` exception handling to return partial STDOUT/STDERR logs for troubleshooting.
+- **Pure-Python Conversion Pipeline (LibreOffice removed)**: LibreOffice has been completely removed from the server. All document conversions now use pure-Python libraries: `mammoth` (docx→HTML→PDF), `openpyxl` (xlsx), `xlrd` (xls), `python-pptx` (pptx), `odfpy` (odt/ods), `striprtf` (rtf), `reportlab` + `xhtml2pdf` for PDF rendering. `.doc`, `.ppt`, `.odp` return a friendly `400` error asking users to convert to `.docx`/`.pptx`.
 
 ## Project Notes
 - **Filenames**: Automatically generated if not provided in the request.
