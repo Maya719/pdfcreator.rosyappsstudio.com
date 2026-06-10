@@ -10,14 +10,14 @@
     <button class="filter-btn px-4 py-2 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-300" data-filter="PDF Intelligence">PDF Intelligence</button>
 </div>
 
-    <div id="toolsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div id="toolsGrid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 
         {% for tool in tools %}
         <a href="{{ tool.url }}"
            class="tool-card block"
            data-categories="{{ tool.category | join(',') }}">
 
-            <div class="p-5 rounded-2xl border border-blue-100 hover:shadow-xl hover:-translate-y-1 transition duration-300 flex flex-col justify-between min-h-[160px]"
+            <div class="p-5 rounded-2xl border border-blue-100 hover:shadow-xl hover:-translate-y-1 transition duration-300 flex flex-col justify-between min-h-[160px] h-full"
                  style="background-color: {{ tool.color }}">
 
                 <div>

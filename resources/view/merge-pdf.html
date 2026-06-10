@@ -475,6 +475,21 @@
         if (zoomPageNum < zoomTotalPages) { zoomPageNum++; renderZoomPage(); }
     }
 
+    document.addEventListener('dragover', (e) => { e.preventDefault(); });
+    document.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        const droppedFiles = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+        if (droppedFiles.length === 0) return;
+        for (const f of droppedFiles) {
+            const thumb = await generateThumbnail(f);
+            files.push({ file: f, thumb, pageCount: '?' });
+        }
+        uploadPrompt.classList.add('hidden');
+        fileContainer.classList.remove('hidden');
+        pushHistory();
+        renderFiles();
+    });
+
     selectAllCheckbox.addEventListener('change', () => {
         document.querySelectorAll('.file-item-node input[type="checkbox"]').forEach(cb => cb.checked = selectAllCheckbox.checked);
     });
