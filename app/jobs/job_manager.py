@@ -113,13 +113,19 @@ class JobManager:
                 print(f"[Worker] Unexpected error: {e}")
 
     def _process_job(self, job_id, input_path, target_format):
-        from app.services.converters.libreoffice import LibreOffice
-
         self.update_job(job_id, status="processing")
         with self._active_lock:
             self._active_jobs[job_id] = time.time()
         try:
-            public_filename, url = LibreOffice.run_conversion(input_path, target_format)
+            if target_format == "merge":
+                from app.services.merge_pdf_service import merge_pdfs
+                job_data = self.get_job(job_id)
+                file_order = job_data.get("file_order", [])
+                file_paths = [item["path"] for item in file_order]
+                public_filename, url = merge_pdfs(file_paths, f"{job_id}.pdf")
+            else:
+                from app.services.converters.libreoffice import LibreOffice
+                public_filename, url = LibreOffice.run_conversion(input_path, target_format)
             self.update_job(
                 job_id,
                 status="completed",

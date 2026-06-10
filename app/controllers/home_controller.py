@@ -6,6 +6,9 @@ class HomeController(BaseController):
     def mergepdf(self, app, request):
         return app.templates.TemplateResponse(request, "merge-pdf.html")
 
+    def mergepdf_job(self, app, request, job_id):
+        return app.templates.TemplateResponse(request, "jobs/merge_pdf.html", {"job_id": job_id})
+
     def splitpdf(self, app, request):
         return app.templates.TemplateResponse(request, "split-pdf.html")
 

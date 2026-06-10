@@ -118,12 +118,19 @@
     </div>
 </div>
 
-<div id="zoomModal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onclick="if(event.target===this)closeZoom()">
-    <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto shadow-2xl relative" onclick="event.stopPropagation()">
-        <button onclick="closeZoom()" class="absolute top-3 right-3 z-10 w-8 h-8 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-md border border-gray-200 text-gray-500 hover:text-gray-800 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-        <div class="p-6">
-            <h3 id="zoomTitle" class="text-sm font-bold text-gray-800 mb-4 truncate pr-8"></h3>
-            <canvas id="zoomCanvas" class="w-full border border-gray-200 rounded-lg"></canvas>
+<div id="zoomModal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onclick="if(event.target===this)closeZoom()">
+    <div class="bg-white rounded-xl max-w-sm w-full shadow-2xl relative" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <h3 id="zoomTitle" class="text-xs font-bold text-gray-800 truncate pr-4"></h3>
+            <button onclick="closeZoom()" class="w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-700 transition shrink-0"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        </div>
+        <div class="p-4 flex flex-col items-center">
+            <canvas id="zoomCanvas" class="w-full border border-gray-100 rounded-lg bg-gray-50"></canvas>
+            <div class="flex items-center gap-3 mt-3">
+                <button id="prevPageBtn" onclick="prevPage()" class="p-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition" disabled><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"></path></svg></button>
+                <span id="pageIndicator" class="text-xs font-semibold text-gray-500 min-w-[60px] text-center">1 / 1</span>
+                <button id="nextPageBtn" onclick="nextPage()" class="p-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition" disabled><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"></path></svg></button>
+            </div>
         </div>
     </div>
 </div>
@@ -420,18 +427,17 @@
 
         try {
             const data = await f.file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({ data }).promise;
-            const page = await pdf.getPage(1);
-            const vp = page.getViewport({ scale: 1.5 });
-            canvas.width = vp.width;
-            canvas.height = vp.height;
-            await page.render({ canvasContext: ctx, viewport: vp }).promise;
+            zoomPdfDoc = await pdfjsLib.getDocument({ data }).promise;
+            zoomPageNum = 1;
+            zoomTotalPages = zoomPdfDoc.numPages;
+            await renderZoomPage();
         } catch {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.font = '14px sans-serif';
             ctx.fillStyle = '#999';
             ctx.textAlign = 'center';
             ctx.fillText('Preview not available', canvas.width / 2, canvas.height / 2);
+            zoomPdfDoc = null;
         }
 
         document.getElementById('zoomModal').classList.remove('hidden');
@@ -441,10 +447,63 @@
     function closeZoom() {
         document.getElementById('zoomModal').classList.add('hidden');
         document.body.style.overflow = '';
+        zoomPdfDoc = null;
+    }
+
+    let zoomPageNum = 1;
+    let zoomTotalPages = 1;
+
+    async function renderZoomPage() {
+        if (!zoomPdfDoc) return;
+        const canvas = document.getElementById('zoomCanvas');
+        const ctx = canvas.getContext('2d');
+        const page = await zoomPdfDoc.getPage(zoomPageNum);
+        const vp = page.getViewport({ scale: 1.2 });
+        canvas.width = vp.width;
+        canvas.height = vp.height;
+        await page.render({ canvasContext: ctx, viewport: vp }).promise;
+        document.getElementById('pageIndicator').textContent = `${zoomPageNum} / ${zoomTotalPages}`;
+        document.getElementById('prevPageBtn').disabled = zoomPageNum <= 1;
+        document.getElementById('nextPageBtn').disabled = zoomPageNum >= zoomTotalPages;
+    }
+
+    function prevPage() {
+        if (zoomPageNum > 1) { zoomPageNum--; renderZoomPage(); }
+    }
+
+    function nextPage() {
+        if (zoomPageNum < zoomTotalPages) { zoomPageNum++; renderZoomPage(); }
     }
 
     selectAllCheckbox.addEventListener('change', () => {
         document.querySelectorAll('.file-item-node input[type="checkbox"]').forEach(cb => cb.checked = selectAllCheckbox.checked);
+    });
+
+    mergeBtn.addEventListener('click', async function() {
+        if (files.length === 0) return;
+        mergeBtn.disabled = true;
+        mergeBtn.textContent = 'Submitting...';
+
+        const formData = new FormData();
+        for (const f of files) {
+            formData.append('files', f.file, f.file.name);
+        }
+
+        try {
+            const res = await fetch('/api/merge-pdf', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.success && data.job_id) {
+                window.location.href = `/merge-pdf/${data.job_id}`;
+            } else {
+                alert('Merge failed: ' + (data.error || 'Unknown error'));
+                mergeBtn.disabled = false;
+                mergeBtn.textContent = 'Merge PDF';
+            }
+        } catch (err) {
+            alert('Network error: ' + err.message);
+            mergeBtn.disabled = false;
+            mergeBtn.textContent = 'Merge PDF';
+        }
     });
 </script>
 {% endblock %}

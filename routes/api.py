@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Form
 from fastapi.responses import JSONResponse
+from typing import List
 from app.controllers.converter_controller import ConverterController
 from app.jobs.job_manager import JobManager, UPLOADS_DIR
 
@@ -50,8 +51,24 @@ async def word_to_pdf(file: UploadFile = File(...)):
 
 
 @router.post("/merge-pdf")
-async def merge_pdf():
-    return ConverterController.merge_pdf()
+async def merge_pdf(files: List[UploadFile] = File(...)):
+    try:
+        job_id = job_manager.create_job("merged.pdf")
+
+        order = []
+        for i, file in enumerate(files):
+            filename = f"{job_id}_{i:04d}.pdf"
+            upload_path = UPLOADS_DIR / filename
+            with open(upload_path, "wb") as f:
+                f.write(await file.read())
+            order.append({"index": i, "original_name": file.filename or f"file_{i}.pdf", "path": str(upload_path)})
+
+        job_manager.update_job(job_id, file_order=order)
+        job_manager.enqueue(job_id, str(UPLOADS_DIR), "merge")
+
+        return JSONResponse(content={"success": True, "job_id": job_id})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
 
 @router.post("/split-pdf")
 async def split_pdf():

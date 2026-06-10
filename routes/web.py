@@ -14,6 +14,11 @@ def merge_pdf(request: Request):
     app = request.app.state.app_instance
     return HomeController().mergepdf(app, request)
 
+@router.get("/merge-pdf/{job_id}", response_class=HTMLResponse)
+def merge_pdf_job(request: Request, job_id: str):
+    app = request.app.state.app_instance
+    return HomeController().mergepdf_job(app, request, job_id)
+
 @router.get("/split-pdf", response_class=HTMLResponse)
 def split_pdf(request: Request):
     app = request.app.state.app_instance
