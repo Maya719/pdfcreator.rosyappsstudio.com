@@ -30,8 +30,6 @@ archive.zip
 .DS_Store
 
 .codspeed
-storage/public/converted/*
-storage/private/uploads/*
 test-docs
 .env
 node_modules/
