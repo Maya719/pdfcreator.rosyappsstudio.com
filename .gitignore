@@ -34,3 +34,4 @@ storage/public/converted/*
 storage/private/uploads/*
 test-docs
 .env
+node_modules/

@@ -1,0 +1,15 @@
+SUPPORTED_FORMATS = {
+    "pdf",
+    "docx",
+    "doc",
+    "xlsx",
+    "xls",
+    "pptx",
+    "ppt",
+    "odt",
+    "ods",
+    "odp",
+    "rtf",
+    "txt",
+    "html",
+}

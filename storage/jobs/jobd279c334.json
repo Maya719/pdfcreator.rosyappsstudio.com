@@ -1,0 +1,10 @@
+{
+  "id": "jobd279c334",
+  "status": "completed",
+  "original_filename": "blank_sample.xls",
+  "result_filename": "87e519f084874708ab7e041e8ca2f5a9.pdf",
+  "result_url": "http://127.0.0.1:5000/storage/87e519f084874708ab7e041e8ca2f5a9.pdf",
+  "error": null,
+  "created_at": "2026-06-10T07:18:37.673034+00:00",
+  "completed_at": "2026-06-10T07:18:41.376942+00:00"
+}

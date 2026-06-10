@@ -1,57 +1,30 @@
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
-import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-function pythonVitePlugin() {
-  return {
-    name: 'python-vite-plugin',
-    configureServer(server) {
-      server.httpServer?.once('listening', () => {
-        const address = server.httpServer?.address();
-        if (address) {
-          const protocol = server.config.server.https ? 'https' : 'http';
-          let host = typeof address === 'string' ? address : address.address;
-          if (host === '::' || host === '::1' || host === '0.0.0.0' || host === '127.0.0.1') {
-            host = 'localhost';
-          }
-          const port = typeof address === 'string' ? '' : address.port;
-          const url = `${protocol}://${host}:${port}`;
-          fs.writeFileSync(path.resolve(__dirname, 'public/hot'), url);
-        }
-      });
-    },
-    buildStart() {
-      const hotPath = path.resolve(__dirname, 'public/hot');
-      if (fs.existsSync(hotPath)) {
-        try {
-          fs.unlinkSync(hotPath);
-        } catch (e) {
-          // Ignore errors
-        }
-      }
-    }
-  };
-}
 
 export default defineConfig({
   plugins: [
     tailwindcss(),
-    pythonVitePlugin(),
   ],
-  publicDir: false,
+  publicDir: false, // Disables copying of the public folder to avoid the recursion warning
   build: {
-    manifest: true,
-    outDir: 'public/build',
+    manifest: true, // Generate manifest.json
+    outDir: 'public/build', // Output directory for compiled assets
     rollupOptions: {
-      input: [
-        'resources/js/app.js',
-        'resources/css/app.css'
-      ],
+      input: {
+        app: 'resources/js/app.js',
+        'app.css': 'resources/css/app.css',
+      },
+    },
+  },
+  server: {
+    // Ensure Vite dev server runs on a different port than FastAPI
+    port: 5173,
+    strictPort: true,
+  },
+  resolve: {
+    alias: {
+      '~': path.resolve(__dirname, './resources'),
     },
   },
 });

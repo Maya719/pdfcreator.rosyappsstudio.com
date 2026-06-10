@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PDF Creator - Free Online PDF Tools{% endblock %}</title>
+    {{ css_asset('resources/css/app.css') }}
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-[#fcfbfa] text-gray-800 antialiased">
+    {% include "partials/navbar.html" %}
+    
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include "partials/more-tools.html" %}
+    {% include "partials/footer.html" %}
+    
+    {{ js_asset('resources/js/app.js') }}
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

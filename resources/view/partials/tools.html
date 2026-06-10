@@ -1,0 +1,74 @@
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 animate-fadeInUp">
+
+    <div class="mt-10 flex flex-wrap justify-center gap-2 max-w-3xl mx-auto mb-12">
+    <button class="filter-btn px-4 py-2 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-300" data-filter="all">All</button>
+    <button class="filter-btn px-4 py-2 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-300" data-filter="Organize PDF">Organize PDF</button>
+    <button class="filter-btn px-4 py-2 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-300" data-filter="Optimize PDF">Optimize PDF</button>
+    <button class="filter-btn px-4 py-2 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-300" data-filter="Convert PDF">Convert PDF</button>
+    <button class="filter-btn px-4 py-2 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-300" data-filter="Edit PDF">Edit PDF</button>
+    <button class="filter-btn px-4 py-2 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-300" data-filter="PDF Security">PDF Security</button>
+    <button class="filter-btn px-4 py-2 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-300" data-filter="PDF Intelligence">PDF Intelligence</button>
+</div>
+
+    <div id="toolsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+
+        {% for tool in tools %}
+        <a href="{{ tool.url }}"
+           class="tool-card block"
+           data-categories="{{ tool.category | join(',') }}">
+
+            <div class="p-5 rounded-2xl border border-blue-100 hover:shadow-xl hover:-translate-y-1 transition duration-300 flex flex-col justify-between min-h-[160px]"
+                 style="background-color: {{ tool.color }}">
+
+                <div>
+                    <img src="{{ tool.icon }}" class="w-14 h-14 mb-4" alt="{{ tool.name }}">
+                    <h3 class="font-bold text-gray-900 text-base">{{ tool.name }}</h3>
+                    <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">{{ tool.description }}</p>
+                </div>
+
+            </div>
+        </a>
+        {% endfor %}
+
+    </div>
+
+</main>
+<script>
+const buttons = document.querySelectorAll(".filter-btn");
+const cards = document.querySelectorAll(".tool-card");
+
+function setActiveButton(activeBtn) {
+    buttons.forEach(b => {
+        b.classList.remove("bg-gray-900", "text-white", "shadow-md");
+        b.classList.add("bg-gray-100", "text-gray-700", "border", "border-gray-300");
+    });
+
+    activeBtn.classList.remove("bg-gray-100", "text-gray-700", "border", "border-gray-300");
+    activeBtn.classList.add("bg-gray-900", "text-white", "shadow-md");
+}
+
+function filterCards(filter) {
+    cards.forEach(card => {
+        const cats = card.dataset.categories.split(",");
+
+        if (filter === "all" || cats.includes(filter)) {
+            card.style.display = "block";
+        } else {
+            card.style.display = "none";
+        }
+    });
+}
+
+buttons.forEach(btn => {
+    btn.addEventListener("click", () => {
+        setActiveButton(btn);
+        filterCards(btn.dataset.filter);
+    });
+});
+
+window.addEventListener("DOMContentLoaded", () => {
+    const defaultBtn = document.querySelector('[data-filter="all"]');
+    setActiveButton(defaultBtn);
+    filterCards("all");
+});
+</script>

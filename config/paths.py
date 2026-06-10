@@ -1,8 +1,13 @@
 from pathlib import Path
+import shutil
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
+import os
 
-TEMPLATES_DIR = ROOT_DIR / "resources" / "views"
-STORAGE_DIR = ROOT_DIR / "storage"
-PUBLIC_DISK = STORAGE_DIR / "public"
-PRIVATE_DISK = STORAGE_DIR / "private"
+BASE_DIR = Path(os.getcwd()).resolve()
+
+PRIVATE_DIR = BASE_DIR / "storage" / "private"
+PUBLIC_DIR = BASE_DIR / "storage" / "public"
+LIBREOFFICE_BIN = (
+    shutil.which("soffice")
+    or r"C:\Program Files\LibreOffice\program\soffice.exe"
+)

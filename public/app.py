@@ -1,5 +1,3 @@
-import bootstrap.autoload
-from bootstrap.app import create_app
+from bootstrap.autoload import bootstrap
 
-# Create the application instance
-app = create_app()
+app = bootstrap()

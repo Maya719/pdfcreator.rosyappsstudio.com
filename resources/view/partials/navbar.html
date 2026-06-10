@@ -1,0 +1,145 @@
+<header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            
+            <a href="/" class="flex items-center gap-2">
+                <img src="/assets/logo/logo.png" class="h-12" alt="PDFHub Logo">
+            </a>
+
+            <nav class="hidden md:flex items-center gap-1 bg-gray-50 p-1.5 rounded-full border border-gray-100">
+                <a href="/" class="px-4 py-2 text-xs font-semibold uppercase tracking-wider {{ 'text-white bg-gray-900 shadow-sm' if request.url.path == '/' else 'text-gray-600 hover:text-gray-900' }} transition rounded-full">All PDF Tools</a>
+                <a href="/merge-pdf" class="px-4 py-2 text-xs font-semibold uppercase tracking-wider {{ 'text-white bg-gray-900 shadow-sm' if request.url.path == '/merge-pdf' else 'text-gray-600 hover:text-gray-900' }} transition rounded-full">Merge PDF</a>
+                <a href="/split-pdf" class="px-4 py-2 text-xs font-semibold uppercase tracking-wider {{ 'text-white bg-gray-900 shadow-sm' if request.url.path == '/split-pdf' else 'text-gray-600 hover:text-gray-900' }} transition rounded-full">Split PDF</a>
+                <a href="/compress-pdf" class="px-4 py-2 text-xs font-semibold uppercase tracking-wider {{ 'text-white bg-gray-900 shadow-sm' if request.url.path == '/compress-pdf' else 'text-gray-600 hover:text-gray-900' }} transition rounded-full">Compress PDF</a>
+                <div class="relative group">
+                    <button class="px-4 py-2 text-xs font-semibold uppercase tracking-wider {{ 'text-white bg-gray-900 shadow-sm' if request.url.path in ['/word-to-pdf', '/ppt-to-pdf', '/excel-to-pdf', '/jpg-to-pdf', '/pdf-to-ppt', '/pdf-to-excel', '/pdf-to-jpg', '/pdf-to-word'] else 'text-gray-600 group-hover:text-gray-900' }} transition flex items-center gap-1 rounded-full">
+                        Convert PDF <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                    </button>
+                    <div class="absolute top-full left-0 mt-2 bg-white rounded-xl border border-gray-100 shadow-xl shadow-gray-100/80 p-4 w-80 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform group-hover:translate-y-0 translate-y-2">
+                        <div class="mb-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-3">To PDF</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <a href="/word-to-pdf" class="flex items-center gap-2 p-3 text-xs font-semibold {{ 'text-gray-900 bg-gray-50' if request.url.path == '/word-to-pdf' else 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }} rounded-lg transition">
+                                    <img src="/assets/icons/word-to-pdf.svg" class="w-5 h-5" alt="Word to PDF">
+                                    Word to PDF
+                                </a>
+                                <a href="/ppt-to-pdf" class="flex items-center gap-2 p-3 text-xs font-semibold {{ 'text-gray-900 bg-gray-50' if request.url.path == '/ppt-to-pdf' else 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }} rounded-lg transition">
+                                    <img src="/assets/icons/ppt-to-pdf.svg" class="w-5 h-5" alt="PPT to PDF">
+                                    PPT to PDF
+                                </a>
+                                <a href="/excel-to-pdf" class="flex items-center gap-2 p-3 text-xs font-semibold {{ 'text-gray-900 bg-gray-50' if request.url.path == '/excel-to-pdf' else 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }} rounded-lg transition">
+                                    <img src="/assets/icons/excel-to-pdf.svg" class="w-5 h-5" alt="Excel to PDF">
+                                    Excel to PDF
+                                </a>
+                                <a href="/jpg-to-pdf" class="flex items-center gap-2 p-3 text-xs font-semibold {{ 'text-gray-900 bg-gray-50' if request.url.path == '/jpg-to-pdf' else 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }} rounded-lg transition">
+                                    <img src="/assets/icons/jpg-to-pdf.svg" class="w-5 h-5" alt="JPG to PDF">
+                                    JPG to PDF
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="pt-4 border-t border-gray-100">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-3">From PDF</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <a href="/pdf-to-ppt" class="flex items-center gap-2 p-3 text-xs font-semibold {{ 'text-gray-900 bg-gray-50' if request.url.path == '/pdf-to-ppt' else 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }} rounded-lg transition">
+                                    <img src="/assets/icons/ppt-to-pdf.svg" class="w-5 h-5" alt="PDF to PPT">
+                                    PDF to PPT
+                                </a>
+                                <a href="/pdf-to-excel" class="flex items-center gap-2 p-3 text-xs font-semibold {{ 'text-gray-900 bg-gray-50' if request.url.path == '/pdf-to-excel' else 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }} rounded-lg transition">
+                                    <img src="/assets/icons/pdf-to-excel.svg" class="w-5 h-5" alt="PDF to Excel">
+                                    PDF to Excel
+                                </a>
+                                <a href="/pdf-to-jpg" class="flex items-center gap-2 p-3 text-xs font-semibold {{ 'text-gray-900 bg-gray-50' if request.url.path == '/pdf-to-jpg' else 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }} rounded-lg transition">
+                                    <img src="/assets/icons/pdf-to-jpg.svg" class="w-5 h-5" alt="PDF to JPG">
+                                    PDF to JPG
+                                </a>
+                                <a href="/pdf-to-word" class="flex items-center gap-2 p-3 text-xs font-semibold {{ 'text-gray-900 bg-gray-50' if request.url.path == '/pdf-to-word' else 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }} rounded-lg transition">
+                                    <img src="/assets/icons/pdf-to-word.svg" class="w-5 h-5" alt="PDF to Word">
+                                    PDF to Word
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="hidden md:flex items-center gap-4">
+                <a href="#" class="text-sm font-semibold text-gray-600 hover:text-gray-900 transition">Login</a>
+                <a href="#" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-red-200 transition">Sign Up</a>
+            </div>
+
+            <button id="mobileMenuBtn" class="md:hidden p-2 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+
+        </div>
+    </header>
+
+    <div id="mobileMenu" class="fixed inset-0 z-[9999] bg-black/50 hidden md:hidden">
+        <div class="fixed right-0 top-0 h-full w-80 bg-white shadow-xl transform translate-x-full transition-transform duration-300 overflow-y-auto" id="mobileDrawer">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-8">
+                    <a href="/" class="flex items-center gap-2">
+                        <img src="/assets/logo/logo.png" class="h-10" alt="PDFHub Logo">
+                    </a>
+                    <button id="closeMobileMenu" class="p-2 rounded-lg hover:bg-gray-100 transition">
+                        <svg class="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <nav class="space-y-4 mb-8">
+                    <a href="/merge-pdf" class="block py-2 text-sm font-semibold {{ 'text-red-600' if request.url.path == '/merge-pdf' else 'text-gray-900 hover:text-red-600' }} transition">Merge PDF</a>
+                    <a href="/split-pdf" class="block py-2 text-sm font-semibold {{ 'text-red-600' if request.url.path == '/split-pdf' else 'text-gray-900 hover:text-red-600' }} transition">Split PDF</a>
+                    <a href="/compress-pdf" class="block py-2 text-sm font-semibold {{ 'text-red-600' if request.url.path == '/compress-pdf' else 'text-gray-900 hover:text-red-600' }} transition">Compress PDF</a>
+                    <a href="/word-to-pdf" class="block py-2 text-sm font-semibold {{ 'text-red-600' if request.url.path == '/word-to-pdf' else 'text-gray-900 hover:text-red-600' }} transition">Word to PDF</a>
+                    <a href="/ppt-to-pdf" class="block py-2 text-sm font-semibold {{ 'text-red-600' if request.url.path == '/ppt-to-pdf' else 'text-gray-900 hover:text-red-600' }} transition">PPT to PDF</a>
+                    <a href="/excel-to-pdf" class="block py-2 text-sm font-semibold {{ 'text-red-600' if request.url.path == '/excel-to-pdf' else 'text-gray-900 hover:text-red-600' }} transition">Excel to PDF</a>
+                    <a href="/pdf-to-ppt" class="block py-2 text-sm font-semibold {{ 'text-red-600' if request.url.path == '/pdf-to-ppt' else 'text-gray-900 hover:text-red-600' }} transition">PDF to PPT</a>
+                    <a href="/pdf-to-excel" class="block py-2 text-sm font-semibold {{ 'text-red-600' if request.url.path == '/pdf-to-excel' else 'text-gray-900 hover:text-red-600' }} transition">PDF to Excel</a>
+                    <a href="/sign-pdf" class="block py-2 text-sm font-semibold {{ 'text-red-600' if request.url.path == '/sign-pdf' else 'text-gray-900 hover:text-red-600' }} transition">Sign PDF</a>
+                    <a href="/watermark" class="block py-2 text-sm font-semibold {{ 'text-red-600' if request.url.path == '/watermark' else 'text-gray-900 hover:text-red-600' }} transition">Watermark</a>
+                    <a href="/protect-pdf" class="block py-2 text-sm font-semibold {{ 'text-red-600' if request.url.path == '/protect-pdf' else 'text-gray-900 hover:text-red-600' }} transition">Protect PDF</a>
+                    <a href="/unlock-pdf" class="block py-2 text-sm font-semibold {{ 'text-red-600' if request.url.path == '/unlock-pdf' else 'text-gray-900 hover:text-red-600' }} transition">Unlock PDF</a>
+                    <a href="/ai-summerizer" class="block py-2 text-sm font-semibold {{ 'text-red-600' if request.url.path == '/ai-summerizer' else 'text-gray-900 hover:text-red-600' }} transition">AI Summarizer</a>
+                    <a href="/page-number" class="block py-2 text-sm font-semibold {{ 'text-red-600' if request.url.path == '/page-number' else 'text-gray-900 hover:text-red-600' }} transition">Page Numbers</a>
+                </nav>
+
+                <div class="space-y-3 pt-6 border-t border-gray-100">
+                    <a href="#" class="block w-full text-center py-3 text-sm font-semibold text-gray-900 border border-gray-200 rounded-xl hover:bg-gray-50 transition">Login</a>
+                    <a href="#" class="block w-full text-center py-3 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 transition">Sign Up</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            const mobileDrawer = document.getElementById('mobileDrawer');
+            const closeMobileMenu = document.getElementById('closeMobileMenu');
+
+            const openDrawer = () => {
+                mobileMenu.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                setTimeout(() => mobileDrawer.classList.remove('translate-x-full'), 10);
+            };
+
+            const closeDrawer = () => {
+                mobileDrawer.classList.add('translate-x-full');
+                document.body.style.overflow = '';
+                setTimeout(() => mobileMenu.classList.add('hidden'), 300);
+            };
+
+            if (mobileMenuBtn && mobileMenu && mobileDrawer && closeMobileMenu) {
+                mobileMenuBtn.addEventListener('click', openDrawer);
+                closeMobileMenu.addEventListener('click', closeDrawer);
+                mobileMenu.addEventListener('click', function(e) {
+                    if (e.target === mobileMenu) closeDrawer();
+                });
+            }
+        });
+    </script>
