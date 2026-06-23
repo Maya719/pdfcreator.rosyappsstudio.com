@@ -16,7 +16,12 @@ def merge_pdfs(file_paths, output_filename=None):
         raise ValueError("No files to merge")
 
     if output_filename is None:
-        output_filename = f"merged_{uuid.uuid4().hex}.pdf"
+        public_filename = "merged.pdf"
+        counter = 1
+        while (PUBLIC_DIR / public_filename).exists():
+            public_filename = f"merged_{counter}.pdf"
+            counter += 1
+        output_filename = public_filename
 
     output_path = PUBLIC_DIR / output_filename
     PUBLIC_DIR.mkdir(parents=True, exist_ok=True)

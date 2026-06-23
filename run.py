@@ -1,5 +1,7 @@
 import uvicorn
-from public.app import app
+from bootstrap.autoload import bootstrap
+
+app = bootstrap()
 
 if __name__ == "__main__":
-    uvicorn.run("public.app:app", host="127.0.0.1", port=5000, reload=True)
+    uvicorn.run("run:app", host="127.0.0.1", port=5000, reload=True)

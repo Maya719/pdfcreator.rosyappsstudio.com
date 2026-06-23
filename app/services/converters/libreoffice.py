@@ -20,24 +20,24 @@ class LibreOffice:
     # Font substitution table — maps Windows fonts to metric-compatible Linux fonts
     # Carlito ≈ Calibri, Caladea ≈ Cambria, Liberation ≈ Arial/Times/Courier
     FONT_SUBS_XCU = '''<?xml version="1.0" encoding="UTF-8"?>
-<oor:items xmlns:oor="http://openoffice.org/2001/registry"
-           xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <item oor:path="/org.openoffice.VCL/FontSubstitution">
-    <prop oor:name="FontSubstituteTable" oor:op="fuse">
-      <value>
-        <it><prop oor:name="SubstituteFont"><value>Carlito</value></prop><prop oor:name="OriginalFont"><value>Calibri</value></prop></it>
-        <it><prop oor:name="SubstituteFont"><value>Caladea</value></prop><prop oor:name="OriginalFont"><value>Cambria</value></prop></it>
-        <it><prop oor:name="SubstituteFont"><value>Liberation Sans</value></prop><prop oor:name="OriginalFont"><value>Arial</value></prop></it>
-        <it><prop oor:name="SubstituteFont"><value>Liberation Serif</value></prop><prop oor:name="OriginalFont"><value>Times New Roman</value></prop></it>
-        <it><prop oor:name="SubstituteFont"><value>Liberation Mono</value></prop><prop oor:name="OriginalFont"><value>Courier New</value></prop></it>
-        <it><prop oor:name="SubstituteFont"><value>DejaVu Sans</value></prop><prop oor:name="OriginalFont"><value>Verdana</value></prop></it>
-        <it><prop oor:name="SubstituteFont"><value>DejaVu Sans</value></prop><prop oor:name="OriginalFont"><value>Tahoma</value></prop></it>
-        <it><prop oor:name="SubstituteFont"><value>DejaVu Sans</value></prop><prop oor:name="OriginalFont"><value>Segoe UI</value></prop></it>
-      </value>
-    </prop>
-  </item>
-</oor:items>'''
+                        <oor:items xmlns:oor="http://openoffice.org/2001/registry"
+                                xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <item oor:path="/org.openoffice.VCL/FontSubstitution">
+                                <prop oor:name="FontSubstituteTable" oor:op="fuse">
+                                <value>
+                                    <it><prop oor:name="SubstituteFont"><value>Carlito</value></prop><prop oor:name="OriginalFont"><value>Calibri</value></prop></it>
+                                    <it><prop oor:name="SubstituteFont"><value>Caladea</value></prop><prop oor:name="OriginalFont"><value>Cambria</value></prop></it>
+                                    <it><prop oor:name="SubstituteFont"><value>Liberation Sans</value></prop><prop oor:name="OriginalFont"><value>Arial</value></prop></it>
+                                    <it><prop oor:name="SubstituteFont"><value>Liberation Serif</value></prop><prop oor:name="OriginalFont"><value>Times New Roman</value></prop></it>
+                                    <it><prop oor:name="SubstituteFont"><value>Liberation Mono</value></prop><prop oor:name="OriginalFont"><value>Courier New</value></prop></it>
+                                    <it><prop oor:name="SubstituteFont"><value>DejaVu Sans</value></prop><prop oor:name="OriginalFont"><value>Verdana</value></prop></it>
+                                    <it><prop oor:name="SubstituteFont"><value>DejaVu Sans</value></prop><prop oor:name="OriginalFont"><value>Tahoma</value></prop></it>
+                                    <it><prop oor:name="SubstituteFont"><value>DejaVu Sans</value></prop><prop oor:name="OriginalFont"><value>Segoe UI</value></prop></it>
+                                </value>
+                                </prop>
+                            </item>
+                        </oor:items>'''
 
     @staticmethod
     def _prepare_environment(private_dir, profile_dir):
@@ -97,7 +97,7 @@ class LibreOffice:
             logger.warning(f"cleanup error: {e}")
 
     @staticmethod
-    def run_conversion(input_path_str, target_format):
+    def run_conversion(input_path_str, target_format, original_filename=None):
         target_format = target_format.lower().strip()
 
         if target_format not in SUPPORTED_FORMATS:
@@ -189,7 +189,17 @@ class LibreOffice:
 
             converted_file = converted_files[0]
 
-            public_filename = f"{session_id}.{target_format}"
+            if original_filename:
+                base_name = original_filename.rsplit(".", 1)[0] if "." in original_filename else original_filename
+                base_name = base_name.replace(" ", "_")
+                public_filename = f"converted_{base_name}.{target_format}"
+                counter = 1
+                while (PUBLIC_DIR / public_filename).exists():
+                    public_filename = f"converted_{base_name}_{counter}.{target_format}"
+                    counter += 1
+            else:
+                public_filename = f"{session_id}.{target_format}"
+
             public_path = PUBLIC_DIR / public_filename
 
             shutil.move(str(converted_file), str(public_path))

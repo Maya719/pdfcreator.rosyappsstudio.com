@@ -1,6 +1,7 @@
 import importlib
 from config.providers import PROVIDERS
 
+
 class ProviderBootstrapper:
     def __init__(self, app):
         self.app = app
@@ -14,9 +15,11 @@ class ProviderBootstrapper:
             provider_class = None
 
             for item in module.__dict__.values():
-                if (isinstance(item, type) and 
-                    item.__name__.endswith("Provider") and 
-                    item.__name__ != "ServiceProvider"):
+                if (
+                    isinstance(item, type)
+                    and item.__name__.endswith("Provider")
+                    and item.__name__ != "ServiceProvider"
+                ):
                     provider_class = item
                     break
 
