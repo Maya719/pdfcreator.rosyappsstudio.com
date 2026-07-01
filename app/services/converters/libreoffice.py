@@ -49,7 +49,7 @@ class LibreOffice:
             logger.info(f"Sending file {input_path.name} to Runpod for conversion via URL: {file_url}")
 
             # Call the Runpod API
-            run_url = f"https://api.runpod.ai/v1/{runpod_endpoint_id}/runsync"
+            run_url = f"https://api.runpod.ai/v2/{runpod_endpoint_id}/runsync"
             headers = {
                 "Authorization": f"Bearer {runpod_api_key}",
                 "Content-Type": "application/json"
@@ -71,7 +71,7 @@ class LibreOffice:
             # If not completed immediately, poll for status
             if status in ["IN_QUEUE", "IN_PROGRESS"]:
                 logger.info(f"Job {job_id} is in queue/progress, polling status...")
-                status_url = f"https://api.runpod.ai/v1/{runpod_endpoint_id}/status/{job_id}"
+                status_url = f"https://api.runpod.ai/v2/{runpod_endpoint_id}/status/{job_id}"
                 while status in ["IN_QUEUE", "IN_PROGRESS"]:
                     time.sleep(1.5)
                     status_resp = requests.get(status_url, headers=headers, timeout=30)

@@ -2,8 +2,6 @@ import json
 import uuid
 import threading
 import time
-import subprocess
-import os
 from pathlib import Path
 from datetime import datetime, timezone
 from config.paths import BASE_DIR, PRIVATE_DIR
@@ -16,24 +14,6 @@ WATCHDOG_INTERVAL = 30
 REDIS_JOB_PREFIX = "job:"
 REDIS_QUEUE_KEY = "job:queue"
 REDIS_ACTIVE_KEY = "active:jobs"
-
-
-def kill_soffice():
-    if os.name == 'nt':
-        si = subprocess.STARTUPINFO()
-        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        si.wShowWindow = subprocess.SW_HIDE
-        try:
-            subprocess.run(['taskkill', '/F', '/IM', 'soffice.exe', '/IM', 'soffice.bin', '/T'],
-                           capture_output=True, timeout=10, startupinfo=si)
-        except Exception:
-            pass
-    else:
-        for cmd in [['killall', '-9', 'soffice', 'soffice.bin'], ['pkill', '-9', '-f', 'soffice']]:
-            try:
-                subprocess.run(cmd, capture_output=True, timeout=10)
-            except Exception:
-                pass
 
 
 class JobManager:
@@ -71,7 +51,7 @@ class JobManager:
             "result_url": "",
             "error": "",
             "created_at": now,
-            "completed_at": ""
+            "completed_at": "",
         }
         redis.hset(self._job_key(job_id), mapping=job)
         return job_id
@@ -122,27 +102,33 @@ class JobManager:
         try:
             if target_format == "merge":
                 from app.services.merge_pdf_service import merge_pdfs
+
                 job_data = self.get_job(job_id)
-                file_paths = [item["path"] for item in (job_data.get("file_order") or [])]
+                file_paths = [
+                    item["path"] for item in (job_data.get("file_order") or [])
+                ]
                 public_filename, url = merge_pdfs(file_paths)
             else:
                 from app.services.converters.libreoffice import LibreOffice
+
                 job_data = self.get_job(job_id)
                 original_filename = job_data.get("original_filename", "")
-                public_filename, url = LibreOffice.run_conversion(input_path, target_format, original_filename)
+                public_filename, url = LibreOffice.run_conversion(
+                    input_path, target_format, original_filename
+                )
             self.update_job(
                 job_id,
                 status="completed",
                 result_filename=public_filename,
                 result_url=url,
-                completed_at=datetime.now(timezone.utc).isoformat()
+                completed_at=datetime.now(timezone.utc).isoformat(),
             )
         except Exception as e:
             self.update_job(
                 job_id,
                 status="failed",
                 error=str(e),
-                completed_at=datetime.now(timezone.utc).isoformat()
+                completed_at=datetime.now(timezone.utc).isoformat(),
             )
         finally:
             redis.hdel(REDIS_ACTIVE_KEY, job_id)
@@ -159,13 +145,14 @@ class JobManager:
                     except (ValueError, TypeError):
                         continue
                     if now - start > MAX_JOB_TIME:
-                        print(f"[Watchdog] Job {jid} exceeded {MAX_JOB_TIME}s — killing soffice")
-                        kill_soffice()
+                        print(
+                            f"[Watchdog] Job {jid} exceeded {MAX_JOB_TIME}s — marking as failed"
+                        )
                         self.update_job(
                             jid,
                             status="failed",
                             error=f"Conversion timed out after {MAX_JOB_TIME // 60} minutes",
-                            completed_at=datetime.now(timezone.utc).isoformat()
+                            completed_at=datetime.now(timezone.utc).isoformat(),
                         )
                         redis.hdel(REDIS_ACTIVE_KEY, jid)
             except Exception as e:
