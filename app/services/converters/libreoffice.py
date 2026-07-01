@@ -2,13 +2,14 @@ import os
 import uuid
 import shutil
 import logging
-import subprocess
 import json
-
+import base64
+import time
+import requests
 from pathlib import Path
 
 from config.supported_formats import SUPPORTED_FORMATS
-from config.paths import PRIVATE_DIR, PUBLIC_DIR, LIBREOFFICE_BIN
+from config.paths import PUBLIC_DIR
 from config.app import APP_URL
 
 logging.basicConfig(level=logging.INFO)
@@ -17,85 +18,6 @@ logger = logging.getLogger(__name__)
 
 class LibreOffice:
 
-    # Font substitution table — maps Windows fonts to metric-compatible Linux fonts
-    # Carlito ≈ Calibri, Caladea ≈ Cambria, Liberation ≈ Arial/Times/Courier
-    FONT_SUBS_XCU = '''<?xml version="1.0" encoding="UTF-8"?>
-                        <oor:items xmlns:oor="http://openoffice.org/2001/registry"
-                                xmlns:xs="http://www.w3.org/2001/XMLSchema"
-                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-                            <item oor:path="/org.openoffice.VCL/FontSubstitution">
-                                <prop oor:name="FontSubstituteTable" oor:op="fuse">
-                                <value>
-                                    <it><prop oor:name="SubstituteFont"><value>Carlito</value></prop><prop oor:name="OriginalFont"><value>Calibri</value></prop></it>
-                                    <it><prop oor:name="SubstituteFont"><value>Caladea</value></prop><prop oor:name="OriginalFont"><value>Cambria</value></prop></it>
-                                    <it><prop oor:name="SubstituteFont"><value>Liberation Sans</value></prop><prop oor:name="OriginalFont"><value>Arial</value></prop></it>
-                                    <it><prop oor:name="SubstituteFont"><value>Liberation Serif</value></prop><prop oor:name="OriginalFont"><value>Times New Roman</value></prop></it>
-                                    <it><prop oor:name="SubstituteFont"><value>Liberation Mono</value></prop><prop oor:name="OriginalFont"><value>Courier New</value></prop></it>
-                                    <it><prop oor:name="SubstituteFont"><value>DejaVu Sans</value></prop><prop oor:name="OriginalFont"><value>Verdana</value></prop></it>
-                                    <it><prop oor:name="SubstituteFont"><value>DejaVu Sans</value></prop><prop oor:name="OriginalFont"><value>Tahoma</value></prop></it>
-                                    <it><prop oor:name="SubstituteFont"><value>DejaVu Sans</value></prop><prop oor:name="OriginalFont"><value>Segoe UI</value></prop></it>
-                                </value>
-                                </prop>
-                            </item>
-                        </oor:items>'''
-
-    @staticmethod
-    def _prepare_environment(private_dir, profile_dir):
-        """Builds a clean environment for LibreOffice subprocess"""
-        env = os.environ.copy()
-
-        # Prevent app's Python from leaking into LibreOffice's embedded Python
-        for var in ['PYTHONHOME', 'PYTHONPATH', 'PYTHONNOUSERSITE']:
-            env.pop(var, None)
-
-        env['HOME'] = str(private_dir.resolve())
-
-        # Headless rendering
-        env['SAL_USE_VCLPLUGIN'] = 'svp'
-        if os.name != 'nt':
-            env['DISPLAY'] = ':99'
-
-        env['OOO_DISABLE_RECOVERY'] = '1'
-    
-        return env
-
-    @staticmethod
-    def kill_soffice_processes():
-        try:
-            if os.name == "nt":
-                si = subprocess.STARTUPINFO()
-                si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                si.wShowWindow = subprocess.SW_HIDE
-
-                for p in ["soffice.exe", "soffice.bin"]:
-                    try:
-                        subprocess.run(
-                            ["taskkill", "/F", "/T", "/IM", p],
-                            stdout=subprocess.DEVNULL,
-                            stderr=subprocess.DEVNULL,
-                            timeout=10,
-                            startupinfo=si,
-                        )
-                    except Exception:
-                        pass
-            else:
-                for cmd in (
-                    ["pkill", "-9", "-f", "soffice"],
-                    ["killall", "-9", "soffice"],
-                    ["killall", "-9", "soffice.bin"],
-                ):
-                    try:
-                        subprocess.run(
-                            cmd,
-                            stdout=subprocess.DEVNULL,
-                            stderr=subprocess.DEVNULL,
-                            timeout=10,
-                        )
-                    except Exception:
-                        pass
-        except Exception as e:
-            logger.warning(f"cleanup error: {e}")
-
     @staticmethod
     def run_conversion(input_path_str, target_format, original_filename=None):
         target_format = target_format.lower().strip()
@@ -103,92 +25,76 @@ class LibreOffice:
         if target_format not in SUPPORTED_FORMATS:
             raise ValueError(f"Unsupported target format: {target_format}")
 
-        libreoffice_path = Path(LIBREOFFICE_BIN)
+        runpod_api_key = os.getenv("RUNPOD_API_KEY")
+        runpod_endpoint_id = os.getenv("RUNPOD_ENDPOINT_ID")
 
-        if not libreoffice_path.exists():
-            raise RuntimeError(f"LibreOffice not found: {LIBREOFFICE_BIN}")
+        if not runpod_api_key or not runpod_endpoint_id:
+            raise RuntimeError("RUNPOD_API_KEY and RUNPOD_ENDPOINT_ID must be configured in environment variables.")
 
         session_id = uuid.uuid4().hex
+        input_path = Path(input_path_str)
 
-        private_dir = PRIVATE_DIR / session_id
-        profile_dir = private_dir / "profile"
+        if not input_path.exists():
+            raise FileNotFoundError(str(input_path))
 
-        private_dir.mkdir(parents=True, exist_ok=True)
-        profile_dir.mkdir(parents=True, exist_ok=True)
-        PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
+        ext = input_path.suffix
+        temp_input_filename = f"temp_{session_id}{ext}"
+        temp_input_public_path = PUBLIC_DIR / temp_input_filename
 
-        # Write font substitution table so LibreOffice maps Calibri→Carlito etc.
-        user_dir = profile_dir / "user"
-        user_dir.mkdir(parents=True, exist_ok=True)
-        with open(user_dir / "registrymodifications.xcu", "w", encoding="utf-8") as f:
-            f.write(LibreOffice.FONT_SUBS_XCU)
-
-        process = None
+        # Copy the private file to the public directory so Runpod can download it
+        shutil.copy2(str(input_path), str(temp_input_public_path))
+        file_url = f"{APP_URL}/storage/{temp_input_filename}"
 
         try:
-            input_path = Path(input_path_str)
+            logger.info(f"Sending file {input_path.name} to Runpod for conversion via URL: {file_url}")
 
-            if not input_path.exists():
-                raise FileNotFoundError(str(input_path))
+            # Call the Runpod API
+            run_url = f"https://api.runpod.ai/v1/{runpod_endpoint_id}/runsync"
+            headers = {
+                "Authorization": f"Bearer {runpod_api_key}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "input": {
+                    "file": file_url,
+                    "target": target_format
+                }
+            }
 
-            logger.info(f"Processing {input_path.name}")
+            response = requests.post(run_url, json=payload, headers=headers, timeout=120)
+            response.raise_for_status()
+            res_data = response.json()
 
-            env = LibreOffice._prepare_environment(private_dir, profile_dir)
+            status = res_data.get("status")
+            job_id = res_data.get("id")
 
-            if target_format == "pdf":
-                export_filter = (
-                    'pdf:writer_pdf_Export:'
-                    '{"SelectPdfVersion":1,"EmbedStandardFonts":true,'
-                    '"FontEmbedding":true,"Quality":100,"ReduceImageResolution":false,'
-                    '"MaxImageResolution":600,"JPEGQuality":100}'
-                )
-            else:
-                export_filter = target_format
+            # If not completed immediately, poll for status
+            if status in ["IN_QUEUE", "IN_PROGRESS"]:
+                logger.info(f"Job {job_id} is in queue/progress, polling status...")
+                status_url = f"https://api.runpod.ai/v1/{runpod_endpoint_id}/status/{job_id}"
+                while status in ["IN_QUEUE", "IN_PROGRESS"]:
+                    time.sleep(1.5)
+                    status_resp = requests.get(status_url, headers=headers, timeout=30)
+                    status_resp.raise_for_status()
+                    res_data = status_resp.json()
+                    status = res_data.get("status")
 
-            profile_url = profile_dir.resolve().as_uri()
+            if status != "COMPLETED":
+                error_msg = res_data.get("error") or f"Runpod job failed with status: {status}"
+                raise RuntimeError(error_msg)
 
-            cmd = [
-                str(libreoffice_path),
-                f"-env:UserInstallation={profile_url}",
-                "--headless",
-                "--invisible",
-                "--norestore",
-                "--nolockcheck",
-                "--nofirststartwizard",
-                "--convert-to",
-                export_filter,
-                "--outdir",
-                str(private_dir),
-                str(input_path.resolve()),
-            ]
+            output = res_data.get("output", {})
+            if isinstance(output, dict) and "error" in output:
+                raise RuntimeError(f"Runpod worker error: {output['error']}")
 
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                env=env,
-                text=True,
-                cwd=str(private_dir),
-            )
+            base64_result = output.get("base64")
+            if not base64_result:
+                raise RuntimeError("Response from Runpod did not contain 'base64' output.")
 
-            try:
-                stdout, stderr = process.communicate(timeout=600)
+            # Decode the base64 output
+            converted_bytes = base64.b64decode(base64_result)
 
-            except subprocess.TimeoutExpired:
-                process.kill()
-                LibreOffice.kill_soffice_processes()
-                raise TimeoutError("Conversion timeout")
-
-            if process.returncode != 0:
-                raise RuntimeError(stderr or stdout)
-
-            converted_files = list(private_dir.glob(f"*.{target_format}"))
-
-            if not converted_files:
-                raise RuntimeError("Output file not found")
-
-            converted_file = converted_files[0]
-
+            # Generate the final public file name
             if original_filename:
                 base_name = original_filename.rsplit(".", 1)[0] if "." in original_filename else original_filename
                 base_name = base_name.replace(" ", "_")
@@ -202,16 +108,16 @@ class LibreOffice:
 
             public_path = PUBLIC_DIR / public_filename
 
-            shutil.move(str(converted_file), str(public_path))
+            # Write the converted file bytes
+            with open(public_path, "wb") as f:
+                f.write(converted_bytes)
 
             return public_filename, f"{APP_URL}/storage/{public_filename}"
 
         finally:
-            try:
-                if process and process.poll() is None:
-                    process.kill()
-            except Exception:
-                pass
-
-            LibreOffice.kill_soffice_processes()
-            shutil.rmtree(private_dir, ignore_errors=True)
+            # Always clean up the temporary public input file
+            if temp_input_public_path.exists():
+                try:
+                    os.remove(temp_input_public_path)
+                except Exception as e:
+                    logger.warning(f"Failed to delete temporary public input file: {e}")

@@ -5,6 +5,7 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 
 from a2wsgi import ASGIMiddleware
-from public.app import app
+from bootstrap.autoload import bootstrap
 
+app = bootstrap()
 application = ASGIMiddleware(app)
